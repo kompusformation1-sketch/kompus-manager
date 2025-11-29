@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kompus Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1200px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .login-screen,
+        .app-screen {
+            display: none;
+        }
+
+        .login-screen.active,
+        .app-screen.active {
+            display: block;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5em;
+        }
+
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        input[type="password"],
+        input[type="text"],
+        input[type="email"] {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .section {
+            margin: 40px 0;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .list-item {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .list-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .list-item-content {
+            flex: 1;
+        }
+
+        .list-item-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .list-item-subtitle {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-planned {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .error {
+            color: #dc3545;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            width: auto;
+            padding: 12px 24px;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .stat-number {
+                font-size: 2em;
+            }
+
+            .list-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .badge {
+                align-self: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-screen active">
+            <h1>🎓 Kompus Manager</h1>
+            <div class="login-form">
+                <input 
+                    type="password" 
+                    id="password" 
+                    placeholder="Mot de passe" 
+                    onkeypress="if(event.key==='Enter') login()"
+                    autocomplete="current-password"
+                >
+                <button onclick="login()">🔐 Se connecter</button>
+                <div class="error" id="loginError"></div>
+            </div>
+        </div>
+
+        <div class="app-screen">
+            <div class="header">
+                <h1>📊 Dashboard Kompus</h1>
+                <button class="logout-btn" onclick="logout()">🚪 Déconnexion</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalApprenants">-</div>
+                    <div class="stat-label">👥 Apprenants</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalSessions">-</div>
+                    <div class="stat-label">📅 Sessions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="apprenantsActifs">-</div>
+                    <div class="stat-label">✅ Actifs</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">👥 Liste des Apprenants</h2>
+                <div id="apprenantsListe" class="loading">Chargement des apprenants...</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">📅 Sessions de Formation</h2>
+                <div id="sessionsListe" class="loading">Chargement des sessions...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            notionKey: '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',
+            dbApprenants: '0f51e6579ae540419f16ecfab86a32dd',
+            dbSessions: '5da0bf0b8c6f4af698c6f9a3e395a6f0',
+            password: 'kompus2025'
+        };
+
+        function login() {
+            const pwd = document.getElementById('password').value;
+            const errorEl = document.getElementById('loginError');
+            
+            if (pwd === CONFIG.password) {
+                errorEl.textContent = '';
+                document.querySelector('.login-screen').classList.remove('active');
+                document.querySelector('.app-screen').classList.add('active');
+                loadData();
+            } else {
+                errorEl.textContent = '❌ Mot de passe incorrect';
+                document.getElementById('password').value = '';
+            }
+        }
+
+        function logout() {
+            document.querySelector('.app-screen').classList.remove('active');
+            document.querySelector('.login-screen').classList.add('active');
+            document.getElementById('password').value = '';
+            document.getElementById('loginError').textContent = '';
+        }
+
+        async function loadData() {
+            try {
+                const [apprenants, sessions] = await Promise.all([
+                    fetchNotion(CONFIG.dbApprenants),
+                    fetchNotion(CONFIG.dbSessions)
+                ]);
+
+                const apprenantsActifs = apprenants.filter(a => 
+                    a.properties.Statut?.select?.name === 'Actif'
+                ).length;
+                
+                document.getElementById('totalApprenants').textContent = apprenants.length;
+                document.getElementById('totalSessions').textContent = sessions.length;
+                document.getElementById('apprenantsActifs').textContent = apprenantsActifs;
+
+                renderApprenants(apprenants);
+                renderSessions(sessions);
+            } catch (error) {
+                console.error('Erreur de chargement:', error);
+                document.getElementById('apprenantsListe').innerHTML = 
+                    '<div class="error">❌ Erreur de connexion à Notion. Vérifiez la clé API.</div>';
+                document.getElementById('sessionsListe').innerHTML = 
+                    '<div class="error">❌ Erreur de connexion à Notion.</div>';
+            }
+        }
+
+        async function fetchNotion(dbId) {
+            const response = await axios.post(
+                `https://api.notion.com/v1/databases/${dbId}/query`,
+                { page_size: 100 },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${CONFIG.notionKey}`,
+                        'Notion-Version': '2022-06-28',
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            return response.data.results;
+        }
+
+        function renderApprenants(apprenants) {
+            if (apprenants.length === 0) {
+                document.getElementById('apprenantsListe').innerHTML = 
+                    '<div class="empty-state">Aucun apprenant trouvé</div>';
+                return;
+            }
+
+            const html = apprenants.map(a => {
+                const nom = a.properties.Nom?.title?.[0]?.plain_text || 'Sans nom';
+                const email = a.properties.Email?.email || 'Pas d\'email';
+                const statut = a.properties.Statut?.select?.name || 'Inconnu';
+                const badgeClass = statut === 'Actif' ? 'badge-active' : 'badge-inactive';
+                
+                return `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title">👤 ${nom}</div>
+                            <div class="list-item-subtitle">✉️ ${email}</div>
+                        </div>
+                        <span class="badge ${badgeClass}">${statut}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('apprenantsListe').innerHTML = html;
+        }
+
+        function renderSessions(sessions) {
+            if (sessions.length === 0) {
+                document.getElementById('sessionsListe').innerHTML = 
+                    '<div class="empty-state">Aucune session trouvée</div>';
+                return;
+            }
+
+            const html = sessions.map(s => {
+                const titre = s.properties.Titre?.title?.[0]?.plain_text || 'Sans titre';
+                const date = s.properties.Date?.date?.start || 'Pas de date';
+                const statut = s.properties.Statut?.select?.name || 'Inconnu';
+                
+                let badgeClass = 'badge-inactive';
+                if (statut === 'Planifiée' || statut === 'En cours') {
+                    badgeClass = 'badge-active';
+                } else if (statut === 'À venir') {
+                    badgeClass = 'badge-planned';
+                }
+                
+                const formattedDate = date !== 'Pas de date' ? 
+                    new Date(date).toLocaleDateString('fr-FR', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    }) : date;
+                
+                return `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title">📚 ${titre}</div>
+                            <div class="list-item-subtitle">📅 ${formattedDate}</div>
+                        </div>
+                        <span class="badge ${badgeClass}">${statut}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('sessionsListe').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
